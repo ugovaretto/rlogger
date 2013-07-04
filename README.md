@@ -8,7 +8,7 @@ Log reguests from MPI processes to clients through a zeromq-based broker.
 Broker running on non-compute nodes receives messges from compute-node
 MPI processes and dispatches messages to remote clients.
 
-For the first version the following constraints are followed:
+For the first version the following constraints are obeyed:
 
 * start broker THEN clients THEN MPI processes
 * one subscription per MPI process only; clients can receive data from
