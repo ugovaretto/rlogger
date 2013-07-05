@@ -9,9 +9,11 @@
 #include <cassert>
 #include <cstring>
 #include <sys/types.h>
-#include <unistd.h>
 #include <iostream>
 #include <zmq.h> 
+
+#include <mpi.h>
+
 
 typedef pid_t PID;
 
@@ -44,6 +46,7 @@ int main(int argc, char** argv) {
         std::cout << "Example: logger \"tcp://logserver:5555\"\n";          
         return 0;          
     }
+    MPI_Init(&argc, &argv);
     void* ctx = zmq_ctx_new(); 
     void* req = zmq_socket(ctx, ZMQ_PUB);
     const char* brokerURI = argv[1];
@@ -61,6 +64,7 @@ int main(int argc, char** argv) {
     assert(rc == 0);
     rc = zmq_ctx_destroy(ctx);
     assert(rc == 0);
+    MPI_Finalize();
     return 0;
 }
 
