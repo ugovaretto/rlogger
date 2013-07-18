@@ -4,7 +4,12 @@
 
 #include <cassert>
 #include <iostream>
+//for framework builds on Mac OS:
+#ifdef __APPLE__
+#include <ZeroMQ/zmq.h>
+#else 
 #include <zmq.h>
+#endif
 
 int main(int argc, char** argv) {
     if(argc < 3) {

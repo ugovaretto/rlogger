@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
                   << argv[0] 
                   << " <broker URI>"
                   << std::endl;
-        std::cout << "Example: logger \"tcp://logserver:5555\"\n";          
+        std::cout << "Example: logger \"tcp://logbroker:5555\"\n";          
         return 0;          
     }
     MPI_Init(&argc, &argv);

@@ -10,7 +10,12 @@
 #include <sys/types.h>
 #include <vector>
 #include <cstdlib>
+//for framework builds on Mac OS:
+#ifdef __APPLE__
+#include <ZeroMQ/zmq.h>
+#else 
 #include <zmq.h>
+#endif
 
 typedef pid_t PID;
 
@@ -35,7 +40,7 @@ int main(int argc, char** argv) {
                   << argv[0] 
                   << " <server URI> [process id]"
                   << std::endl;
-        std::cout << "Example: client \"tcp://logserver:5555\" 27852\n";
+        std::cout << "Example: client \"tcp://logbroker:5555\" 27852\n";
         std::cout << "To receive notifications from ALL processes omit the"
                      " process id parameter\n";          
         return 0;          

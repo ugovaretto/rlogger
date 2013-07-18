@@ -11,15 +11,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <iostream>
-#include <zmq.h> 
+//for framework builds on Mac OS:
+#ifdef __APPLE__
+#include <ZeroMQ/zmq.h>
+#else 
+#include <zmq.h>
+#endif
 
 typedef pid_t PID;
 
 //------------------------------------------------------------------------------
 PID get_proc_id() {
-    int mpiid = -1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpiid);
-    return mpiid;
+    return getpid();
 }
 
 //------------------------------------------------------------------------------
@@ -41,7 +44,7 @@ int main(int argc, char** argv) {
                   << argv[0] 
                   << " <broker URI>"
                   << std::endl;
-        std::cout << "Example: logger \"tcp://logserver:5555\"\n";          
+        std::cout << "Example: logger \"tcp://logbroker:5555\"\n";          
         return 0;          
     }
     void* ctx = zmq_ctx_new(); 
