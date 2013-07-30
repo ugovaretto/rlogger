@@ -103,17 +103,27 @@ public:
                 throw std::runtime_error(FormatErr("closing socket failed"));
     }
     int Recv() {
+        //receive id
         const int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
+        subIdBuffer_.resize(rc);
+        std::copy(inBuffer_.begin(), inBuffer_.begin() + rc,
+                  subIdBuffer_.begin()); 
+        //receive data
+        rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
         if(rc <= 0) return rc;
         switch(DataType(inBuffer_[0])) {
         case TEXT_ID: inBuffer_[rc] = '\0';
-                      txtHandler_(&inBuffer_[sizeof(char)]);
+                      txtHandler_(&sid[0], sid.size(),
+                        &inBuffer_[sizeof(char) + sizeof(SizeType)],
+                        *reinterpret_cast< SizeType* >(
+                            &inBuffer_[sizeof(char)]));
                       break;
-        case BLOB_ID: binHandler_(&inBuffer_[sizeof(char) + sizeof(SizeType)],
+        case BLOB_ID: binHandler_(&sid[0], sid.size(),
+                                  &inBuffer_[sizeof(char) + sizeof(SizeType)],
                         *reinterpret_cast< SizeType* >(
                                                     &inBuffer_[sizeof(char)]));
                       break;
-        case TYPED_ID: typedHandler_(
+        case TYPED_ID: typedHandler_(&sid[0], sid.size(),
                         *reinterpret_cast< TypeID* >(&inBuffer_[sizeof(char)]),
                         &inBuffer_[sizeof(char) + sizeof(TypeID)]);
                       break;
@@ -146,6 +156,7 @@ private:
     void* socket_;
     std::vector< char > inBuffer_;
     zmq_pollitem_t items_[1];
+    std::vector< char > subIdBuffer_;
 };
 
 } // namespace rlog
