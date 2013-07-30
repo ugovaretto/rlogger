@@ -16,15 +16,6 @@ struct DummyHandler {
 };
 
 
-//Default implementations of EmptySubId; thanks to Koenig lookup the selected
-//implementation depends on the namespace the parameter type resides in, so
-//this declarations do not interfere with custom data types defined in other
-//namspaces
-template < typename T> bool EmptySubId(T);
-
-template <> bool EmptySubId<int>(int i) { return i >= 0; } 
-template <> bool EmptySubId<char*>(const char* id) { return strlen(id) > 0; }
-
 //------------------------------------------------------------------------------    
 template < typename SubIdT = int,
            typename TextHandlerT = DummyHandler,
@@ -32,19 +23,20 @@ template < typename SubIdT = int,
            typename TypedHandlerT = DummyHandler >
 class LogClient {
 public:
-    LogClient(const char* brokerURI,
-              SubIdT subId, 
+    LogClient(SubIdT subId, 
+              const char* brokerURI,
               size_t bufferSize = 0x10000, //64kB 
-              bool connect = false) 
+              bool connect = true) 
     : brokerURI_(brokerURI),
       subId_(subId), 
       context_(0),
-      socket(0),
+      socket_(0),
       inBuffer_(bufferSize) {
-        if(connect) Connect(brokerURI_.c_str());
+        if(connect) Connect(brokerURI_.c_str(), subId);
     }
-    LogClient(size_t bufferSize = 0x10000) 
-    : context_(0),
+    LogClient(SubIdT subId, size_t bufferSize = 0x10000) 
+    : subId_(subId),
+      context_(0),
       socket_(0),
       inBuffer_(0x100)
     {}
@@ -53,19 +45,20 @@ public:
               SubIdT subId,
               const char* brokerURI,
               size_t bufferSize = 0x10000, //64kB 
-              bool connect = false) 
+              bool connect = true) 
     : txtHandler_(config),
       binHandler_(config),
       typedHandler_(config),
       brokerURI_(brokerURI),
       subId_(subId),
       context_(0),
-      socket(0),
+      socket_(0),
       inBuffer_(bufferSize) {
-        if(connect) Connect(brokerURI_.c_str());
+        if(connect) Connect(brokerURI_.c_str(), subId);
     }
     template < typename T >
     LogClient(const T& config,
+              SubIdT subId,
               size_t bufferSize = 0x10000) 
     : txtHandler_(config),
       binHandler_(config),
@@ -74,7 +67,6 @@ public:
       socket_(0),
       inBuffer_(bufferSize)
     {}
-
     void Connect(const char* brokerURI, SubIdT subId) {
         Clear();
         context_ = zmq_ctx_new();
@@ -91,11 +83,12 @@ public:
         //code to determine if subId is valid, if not an empty id will be
         //specified to subscribe to all publishers.
         const int rc = !EmptySubId(subId) ? 
-             zmq_setsockopt(socket_, ZMQ_SUBSCRIBE, &subId, sizeof(subId)) :
+             zmq_setsockopt(socket_, ZMQ_SUBSCRIBE, AddressOfSubId(subId),
+                            SizeOfSubId(subId)) :
              zmq_setsockopt(socket_, ZMQ_SUBSCRIBE, 0, 0);
         if(rc != 0) 
             throw std::runtime_error(FormatErr("cannot set socket operatio"));     
-        if(zmq_connect(req, brokerURI) != 0) {
+        if(zmq_connect(socket_, brokerURI) != 0) {
             throw std::runtime_error(FormatErr("connection failed")); 
         }
         memset(&items_[0], sizeof(zmq_pollitem_t), char(0));
@@ -110,18 +103,19 @@ public:
                 throw std::runtime_error(FormatErr("closing socket failed"));
     }
     int Recv() {
-        const int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size());
+        const int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
         if(rc <= 0) return rc;
-        switch(DataType(inBuffer[0])) {
+        switch(DataType(inBuffer_[0])) {
         case TEXT_ID: inBuffer_[rc] = '\0';
                       txtHandler_(&inBuffer_[sizeof(char)]);
                       break;
-        case BLOB_ID: binHandler_(&inBuffer_[sizeof(char) + sizeof(SizeInfo)],
-                                  *reinterpret_cast< int* >(&inBuffer_[sizeof(char)]));
+        case BLOB_ID: binHandler_(&inBuffer_[sizeof(char) + sizeof(SizeType)],
+                        *reinterpret_cast< SizeType* >(
+                                                    &inBuffer_[sizeof(char)]));
                       break;
         case TYPED_ID: typedHandler_(
                         *reinterpret_cast< TypeID* >(&inBuffer_[sizeof(char)]),
-                        &inBuffer[sizeof(char) + sizeof(TypeID)]);
+                        &inBuffer_[sizeof(char) + sizeof(TypeID)]);
                       break;
         default: throw std::logic_error("Unrecognized type");
                  break;                                                                 
@@ -140,9 +134,8 @@ private:
         if(context_ != 0) 
             if(zmq_ctx_destroy(context_) != 0)
                 throw std::runtime_error(
-                    FormatErr("context destruction failed"));
+                    FormatErr("context destruction failed"));    
     }
-  
 private:
     TextHandlerT txtHandler_;
     BinaryHandlerT binHandler_;
