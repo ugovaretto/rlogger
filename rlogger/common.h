@@ -31,7 +31,8 @@ std::string FormatErr(const T& msg) {
 //other namespaces
 template < typename T > bool EmptySubId(T);
 
-template <> bool EmptySubId<int>(int i) { return i >= 0; } 
+template <> bool EmptySubId<int>(int i) { return i >= 0; }
+template <> bool EmptySubId<unsigned int>(unsigned int i) { return i > 0; }  
 template <> bool EmptySubId<char*>(char* id) { return strlen(id) > 0; }
 template <> bool EmptySubId<const char*>(const char* id) { 
   return strlen(id) > 0;
@@ -66,7 +67,8 @@ BufferPosition AddStringRecord(const char* msg,
                                BufferPosition pos,
                                Buffer& buffer,
                                bool autoResize = true) {
-    const size_t totalSize = sizeof(char) + strlen(msg);
+    const SizeType sz = strlen(msg);
+    const size_t totalSize = sizeof(char) + sizeof(SizeType) + sz;
     //not interested in the minimum size: always increase the size by
     //2 * msg size
     if((buffer.end() - pos) < totalSize) {
@@ -78,8 +80,10 @@ BufferPosition AddStringRecord(const char* msg,
     }
     *pos = char(TEXT_ID);
     ++pos;
-    memcpy(&(*pos), msg, strlen(msg));
-    pos += strlen(msg);
+    mempcy(&(*pos), &sz, sizeof(SizeType));
+    pos += sizeof(SizeType);
+    memcpy(&(*pos), msg, sz);
+    pos += sz
     return pos;
 }
 //------------------------------------------------------------------------------
