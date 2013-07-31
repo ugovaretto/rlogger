@@ -10,17 +10,14 @@
 #include <sys/types.h>
 #include <vector>
 #include <cstdlib>
-//for framework builds on Mac OS:
-#ifdef __APPLE__
-#include <ZeroMQ/zmq.h>
-#else 
-#include <zmq.h>
-#endif
+
+#include "LogClient.h"
 
 typedef int PID;
 
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
+    using namespace rlog;
     if(argc < 2) {
         std::cout << "usage: " 
                   << argv[0] 

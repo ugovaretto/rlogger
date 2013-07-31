@@ -14,6 +14,7 @@ namespace rlog {
 struct DummyHandler {
     DummyHandler() {}
     template < typename T > DummyHandler(T) {}
+    void operator()(void*, SizeType, char*, SizeType) {}
 };
 
 //------------------------------------------------------------------------------
@@ -116,7 +117,7 @@ public:
     }
     int Recv() {
         //receive id
-        const int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
+        int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
         subIdBuffer_.resize(rc);
         std::copy(inBuffer_.begin(), inBuffer_.begin() + rc,
                   subIdBuffer_.begin()); 
@@ -125,12 +126,12 @@ public:
         if(rc <= 0) return rc;
         switch(DataType(inBuffer_[0])) {
         case TEXT_ID: inBuffer_[rc] = '\0';
-                      txtHandler_(&sid[0], sid.size(),
+                      txtHandler_(&subIdBuffer_[0], subIdBuffer_.size(),
                         &inBuffer_[sizeof(char) + sizeof(SizeType)],
                         *reinterpret_cast< SizeType* >(
                             &inBuffer_[sizeof(char)]));
                       break;
-        case BLOB_ID: binHandler_(&sid[0], sid.size(),
+        case BLOB_ID: binHandler_(&subIdBuffer_[0], subIdBuffer_.size(),
                                   &inBuffer_[sizeof(char) + sizeof(SizeType)],
                         *reinterpret_cast< SizeType* >(
                                                     &inBuffer_[sizeof(char)]));

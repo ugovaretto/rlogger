@@ -22,7 +22,7 @@ enum DataType {TEXT_ID = 1, BLOB_ID = 2};
 template < typename T > 
 std::string FormatErr(const T& msg) {
     std::ostringstream oss;
-    oss << "ZMQ ERROR " << errno << " - " << msg << '\n';
+    oss << "ZMQ ERROR: " << strerror(errno) << " - " << msg << '\n';
     return oss.str();
 }
 
@@ -60,6 +60,30 @@ template <> void* AddressOfSubId(std::string& s) {
 }
 template <> const void* AddressOfSubId(const std::string& s) {
     return s.c_str();
+}
+//------------------------------------------------------------------------------
+BufferPosition AddStringRecord(const char* msg,
+                               BufferPosition pos,
+                               Buffer& buffer,
+                               bool autoResize = true) {
+    const SizeType sz = strlen(msg);
+    const size_t totalSize = sizeof(char) + sizeof(SizeType) + sz;
+    //not interested in the minimum size: always increase the size by
+    //2 * msg size
+    if((buffer.end() - pos) < totalSize) {
+        const size_t offset = pos - buffer.begin();
+        if(autoResize) {
+          buffer.resize(buffer.size() + 2 * strlen(msg));
+          pos = buffer.begin() + offset;
+        } else throw std::range_error("ERROR: Buffer overrun");
+    }
+    *pos = char(TEXT_ID);
+    ++pos;
+    memcpy(&(*pos), &sz, sizeof(SizeType));
+    pos += sizeof(SizeType);
+    memcpy(&(*pos), msg, sz);
+    pos += sz;
+    return pos;
 }
 //------------------------------------------------------------------------------
 template < typename T >

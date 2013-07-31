@@ -17,20 +17,22 @@ public:
     LogSource(const char* brokerURI,
               SubIdT subId, 
               size_t st = 1, //always send
-              bool connect = false) 
+              bool connect = true) 
     : brokerURI_(brokerURI),
       subId_(subId),
       context_(0),
       socket_(0),
       outBuffer_(0x1000),
-      sendTrigger_(st) {
+      sendTrigger_(st),
+      outBufferPos_(outBuffer_.begin()) {
         if(connect) Connect(brokerURI_.c_str());
     }
     LogSource(size_t st = 1) 
     : context_(0),
       socket_(0),
       outBuffer_(0x1000),
-      sendTrigger_(st)
+      sendTrigger_(st),
+      outBufferPos_(outBuffer_.begin())
     {}
     void Connect(const char* brokerURI) {
         Clear();
@@ -53,11 +55,10 @@ public:
         if(socket_ != 0)
             if(zmq_close(socket_) != 0) 
                 throw std::runtime_error(FormatErr("closing socket failed"));
-        ResetBuffers();    
     }
     void Log(const char* msg,
              bool forceFlush = false,
-             bool autoResizeBuffer = true ) {
+             bool autoResizeBuffer = true) {
         outBufferPos_ = AddStringRecord(msg, 
                                         outBufferPos_,
                                         outBuffer_,
@@ -102,6 +103,7 @@ public:
 private:    
     void Clear() {
         Disconnect();
+        ResetBuffers();    
         if(context_ != 0) 
             if(zmq_ctx_destroy(context_) != 0)
                 throw std::runtime_error(
