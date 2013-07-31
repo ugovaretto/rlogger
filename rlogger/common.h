@@ -32,11 +32,11 @@ std::string FormatErr(const T& msg) {
 //other namespaces
 template < typename T > bool EmptySubId(T);
 
-template <> bool EmptySubId<int>(int i) { return i >= 0; }
-template <> bool EmptySubId<unsigned int>(unsigned int i) { return i > 0; }  
-template <> bool EmptySubId<char*>(char* id) { return strlen(id) > 0; }
+template <> bool EmptySubId<int>(int i) { return i < 0; }
+template <> bool EmptySubId<unsigned int>(unsigned int i) { return i == 0; }  
+template <> bool EmptySubId<char*>(char* id) { return strlen(id) == 0; }
 template <> bool EmptySubId<const char*>(const char* id) { 
-  return strlen(id) > 0;
+  return strlen(id) == 0;
 }
 
 //------------------------------------------------------------------------------
@@ -112,4 +112,22 @@ BufferPosition AddBinaryRecord(const T* msg,
     pos += bufsize;
     return pos;
 }
+
+template < typename T >
+struct ToString {
+    std::string operator()(const void* sid, SizeType sz) {
+      std::ostringstream oss;
+      oss << *reinterpret_cast< const T* >(sid);
+      return oss.str();
+    }
+};
+
+template <>
+struct ToString < const char* > {
+    std::string operator()(const void* sid, SizeType sz) {
+      return reinterpret_cast< const char* >(sid);
+    }
+};
+
+
 } //namespace rlog

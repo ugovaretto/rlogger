@@ -19,14 +19,6 @@ struct DummyHandler {
     void operator()(void*, SizeType, char*, SizeType) {}
 };
 
-struct ParseInt {
-    std::string operator()(const void* sid, SizeType sz) {
-      std::ostringstream oss;
-      oss << *reinterpret_cast< const int* >(sid);
-      return oss.str();
-    }
-};
-
 //------------------------------------------------------------------------------
 template < typename SubIdParserT >
 struct TextHandler {
@@ -128,7 +120,8 @@ public:
                             SizeOfSubId(subId)) :
              zmq_setsockopt(socket_, ZMQ_SUBSCRIBE, 0, 0);
         if(rc != 0) 
-            throw std::runtime_error(FormatErr("cannot set socket operatio"));     
+            throw std::runtime_error(
+                FormatErr("cannot apply socket operation"));     
         if(zmq_connect(socket_, brokerURI) != 0) {
             throw std::runtime_error(FormatErr("connection failed")); 
         }

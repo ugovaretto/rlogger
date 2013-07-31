@@ -29,8 +29,9 @@ int main(int argc, char** argv) {
         return 0;          
     }
     const char* brokerURI = argv[1];
-    const PID pid = argc > 2 ? atoi(argv[2]) : 0;
-    LogClient< PID, TextHandler< ParseInt > > lc(std::cout, pid, brokerURI);
+    const PID pid = argc > 2 ? atoi(argv[2]) : -1;
+    LogClient< PID, TextHandler< ToString< int > > > 
+        lc(std::cout, pid, brokerURI);
     while(1) lc.Recv();
     return 0;
 }
