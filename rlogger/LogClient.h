@@ -1,5 +1,6 @@
 #pragma once
 //Author: Ugo Varetto
+#include <cstdlib>
 #ifdef __APPLE__
 #include <ZeroMQ/zmq.h>
 #else
@@ -13,19 +14,29 @@ namespace rlog {
 //------------------------------------------------------------------------------
 struct DummyHandler {
     DummyHandler() {}
-    template < typename T > DummyHandler(T) {}
+    template < typename T > DummyHandler(T&) {}
+    template < typename T > DummyHandler(const T&) {}
     void operator()(void*, SizeType, char*, SizeType) {}
 };
 
+struct ParseInt {
+    std::string operator()(const void* sid, SizeType sz) {
+      static char buf[0x100];
+      return itoa(*reinterpret_cast< const int* >(sid), buf, 10);  
+    }
+};
+
 //------------------------------------------------------------------------------
+template < typename SubIdParserT >
 struct TextHandler {
     TextHandler(std::ostream& os) : os_(&os) {}
-    template < typename T >
-    TextHandler(T) {}
+    // template < typename T >
+    // TextHandler(T) {}
     void operator()(void* sid, SizeType sz, char* text, SizeType textSize) {
-        *os_ << text;
+        *os_ << parser(sid, sz) << ": " << text << std::endl;
     }
     std::ostream* os_;
+    SubIdParserT parser;
 };
 
 
@@ -53,6 +64,24 @@ public:
       socket_(0),
       inBuffer_(0x100)
     {}
+    template < typename T >
+    LogClient(T& config, //important to have a non const ref to support 
+                         //non const data such as ostreams directly w/o a
+                         //wrapper
+              SubIdT subId,
+              const char* brokerURI,
+              size_t bufferSize = 0x10000, //64kB 
+              bool connect = true) 
+    : txtHandler_(config),
+      binHandler_(config),
+      typedHandler_(config),
+      brokerURI_(brokerURI),
+      subId_(subId),
+      context_(0),
+      socket_(0),
+      inBuffer_(bufferSize) {
+        if(connect) Connect(brokerURI_.c_str(), subId);
+    }
     template < typename T >
     LogClient(const T& config,
               SubIdT subId,
@@ -120,7 +149,7 @@ public:
         int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
         subIdBuffer_.resize(rc);
         std::copy(inBuffer_.begin(), inBuffer_.begin() + rc,
-                  subIdBuffer_.begin()); 
+                  subIdBuffer_.begin());      
         //receive data
         rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
         if(rc <= 0) return rc;
