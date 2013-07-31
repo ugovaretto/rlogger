@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <cerrno>
 #include <cstring>
+#include <algorithm>
 
 namespace rlog {
 
@@ -15,7 +16,7 @@ typedef char TypeID;
 typedef int SizeType;
 typedef std::vector< char >::iterator BufferPosition;
 typedef std::vector< char > Buffer;
-enum DataType {TEXT_ID = 1, BLOB_ID = 2, TYPED_ID = 3};
+enum DataType {TEXT_ID = 1, BLOB_ID = 2};
 
 //------------------------------------------------------------------------------
 template < typename T > 
@@ -38,7 +39,6 @@ template <> bool EmptySubId<const char*>(const char* id) {
   return strlen(id) > 0;
 }
 
-
 //------------------------------------------------------------------------------
 template < typename T > size_t SizeOfSubId(T) { return sizeof(T); }
 template <> size_t SizeOfSubId< char* >(char* str) { return strlen(str); }
@@ -60,31 +60,6 @@ template <> void* AddressOfSubId(std::string& s) {
 }
 template <> const void* AddressOfSubId(const std::string& s) {
     return s.c_str();
-}
-
-//------------------------------------------------------------------------------
-BufferPosition AddStringRecord(const char* msg,
-                               BufferPosition pos,
-                               Buffer& buffer,
-                               bool autoResize = true) {
-    const SizeType sz = strlen(msg);
-    const size_t totalSize = sizeof(char) + sizeof(SizeType) + sz;
-    //not interested in the minimum size: always increase the size by
-    //2 * msg size
-    if((buffer.end() - pos) < totalSize) {
-        const size_t offset = pos - buffer.begin();
-        if(autoResize) {
-          buffer.resize(buffer.size() + 2 * strlen(msg));
-          pos = buffer.begin() + offset;
-        } else throw std::range_error("ERROR: Buffer overrun");
-    }
-    *pos = char(TEXT_ID);
-    ++pos;
-    mempcy(&(*pos), &sz, sizeof(SizeType));
-    pos += sizeof(SizeType);
-    memcpy(&(*pos), msg, sz);
-    pos += sz
-    return pos;
 }
 //------------------------------------------------------------------------------
 template < typename T >
@@ -113,32 +88,4 @@ BufferPosition AddBinaryRecord(const T* msg,
     pos += bufsize;
     return pos;
 }
-//------------------------------------------------------------------------------
-template < typename T >
-BufferPosition AddTypedRecord(const T* msg,
-                              TypeID type,  
-                              size_t size,
-                              BufferPosition pos,
-                              Buffer& buffer,
-                              bool autoResize = true) {
-    const size_t bufsize = size * sizeof(T);
-    const size_t totalSize = sizeof(char) + sizeof(TypeID) + bufsize;
-    //not interested in the minimum size: always increase the size by
-    //2 * buffer + typeid size
-    if((buffer.end() - pos) < totalSize) {
-        const size_t offset = pos - buffer.begin();
-        if(autoResize) {
-          buffer.resize(buffer.size() + 2 * totalSize);
-          pos = buffer.begin() + offset;
-        } else throw std::range_error("ERROR: Buffer overrun");
-    }  
-    *pos = char(TYPED_ID);
-    ++pos;
-    memcpy(&(*pos), &type, sizeof(TypeID));
-    pos += sizeof(TypeID);
-    memcpy(&(*pos), msg, bufsize);
-    pos += bufsize;
-    return pos;
-}
-
 } //namespace rlog

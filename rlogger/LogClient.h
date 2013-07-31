@@ -13,6 +13,18 @@ namespace rlog {
 //------------------------------------------------------------------------------
 struct DummyHandler {
     DummyHandler() {}
+    template < typename T > DummyHandler(T) {}
+};
+
+//------------------------------------------------------------------------------
+struct TextHandler {
+    TextHandler(std::ostream& os) : os_(&os) {}
+    template < typename T >
+    TextHandler(T) {}
+    void operator()(void* sid, SizeType sz, char* text, SizeType textSize) {
+        *os_ << text;
+    }
+    std::ostream* os_;
 };
 
 
@@ -122,10 +134,6 @@ public:
                                   &inBuffer_[sizeof(char) + sizeof(SizeType)],
                         *reinterpret_cast< SizeType* >(
                                                     &inBuffer_[sizeof(char)]));
-                      break;
-        case TYPED_ID: typedHandler_(&sid[0], sid.size(),
-                        *reinterpret_cast< TypeID* >(&inBuffer_[sizeof(char)]),
-                        &inBuffer_[sizeof(char) + sizeof(TypeID)]);
                       break;
         default: throw std::logic_error("Unrecognized type");
                  break;                                                                 

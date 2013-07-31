@@ -17,21 +17,7 @@
 #include <zmq.h>
 #endif
 
-typedef pid_t PID;
-
-//------------------------------------------------------------------------------
-void processdata(const unsigned char* data, size_t len) {
-    PID pid;
-    size_t datalength;
-    memcpy(&pid, data, sizeof(pid));
-    data += sizeof(pid);
-    memcpy(&datalength, data, sizeof(datalength));
-    data += sizeof(datalength);
-    //do not assume string is zero-terminated
-    std::vector<char> databuf(datalength + 1, 0);
-    memcpy(&databuf[0], data, datalength);
-    std::cout << "PID: " << pid << ": " << &databuf[0] << std::endl;
-}
+typedef int PID;
 
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
@@ -45,25 +31,10 @@ int main(int argc, char** argv) {
                      " process id parameter\n";          
         return 0;          
     }
-    void* ctx = zmq_ctx_new(); 
-    void* publisher = zmq_socket(ctx, ZMQ_SUB);
     const char* brokerURI = argv[1];
     const PID pid = argc > 2 ? atoi(argv[2]) : 0;
-    int rc = zmq_connect(publisher, brokerURI);
-    assert(rc == 0);
-    rc = pid > 0 ? zmq_setsockopt(publisher, ZMQ_SUBSCRIBE, &pid, sizeof(pid))
-                 : zmq_setsockopt(publisher, ZMQ_SUBSCRIBE, "", 0); 
-    assert(rc == 0);
-    unsigned char buffer[0x100];
-    while(1) {
-        rc = zmq_recv(publisher, buffer, 0x100, 0);
-        assert(rc > 0);
-        processdata(buffer, rc);
-    }
-    rc = zmq_close(publisher);
-    assert(rc == 0);
-    rc = zmq_ctx_destroy(ctx);
-    assert(rc == 0);
+    LogClient< PID, TextHandler > lc(&std::cout, pid, brokerURI);
+    while(1) lc.Recv();
     return 0;
 }
 

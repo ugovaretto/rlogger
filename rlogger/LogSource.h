@@ -10,8 +10,6 @@
 //==============================================================================
 namespace rlog {
 
-
-
 //------------------------------------------------------------------------------    
 template < typename SubIdT >
 class LogSource {
@@ -76,19 +74,6 @@ public:
                                         outBufferPos_,
                                         outBuffer_,
                                         autoResizeBuffer);
-        CheckAndFlush(forceFlush);
-    }
-    template< typename T >
-    void Log(const T* msg,
-             TypeID type,
-             size_t size,
-             bool forceFlush = false,
-             bool autoResizeBuffer = true) {
-        outBufferPos_ = AddTypedRecord(msg,
-                                       type,
-                                       outBufferPos_,
-                                       outBuffer_,
-                                       autoResizeBuffer);
         CheckAndFlush(forceFlush);
     }
     void Flush() {
