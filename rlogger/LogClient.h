@@ -21,8 +21,9 @@ struct DummyHandler {
 
 struct ParseInt {
     std::string operator()(const void* sid, SizeType sz) {
-      static char buf[0x100];
-      return itoa(*reinterpret_cast< const int* >(sid), buf, 10);  
+      std::ostringstream oss;
+      oss << *reinterpret_cast< const int* >(sid);
+      return oss.str();
     }
 };
 
@@ -30,8 +31,6 @@ struct ParseInt {
 template < typename SubIdParserT >
 struct TextHandler {
     TextHandler(std::ostream& os) : os_(&os) {}
-    // template < typename T >
-    // TextHandler(T) {}
     void operator()(void* sid, SizeType sz, char* text, SizeType textSize) {
         *os_ << parser(sid, sz) << ": " << text << std::endl;
     }

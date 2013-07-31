@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <sstream>
 //Author: Ugo Varetto
 #ifdef __APPLE__
 #include <ZeroMQ/zmq.h>
