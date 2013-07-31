@@ -30,16 +30,20 @@ int main(int argc, char** argv) {
         std::cout << "Example: logger \"tcp://logbroker:5555\"\n";          
         return 0;          
     }
+    RloggerCatchSignals();
     try {
         LogSource< int > ls(argv[1], int(get_proc_id()));
         std::cout << "PID: " << int(get_proc_id()) << std::endl;
-        while(1) {
+        while(!Interrupted()) {
     	   ls.Log("hello");
     	   sleep(1);
         }
+        std::cout << "\rInterrupted" << std::endl;
+        ls.Clear();
     } catch(const std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
+
     return 0;
 }
 

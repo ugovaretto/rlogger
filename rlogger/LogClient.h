@@ -139,6 +139,7 @@ public:
     int Recv() {
         //receive id
         int rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
+        if(rc <= 0) return rc;
         subIdBuffer_.resize(rc);
         std::copy(inBuffer_.begin(), inBuffer_.begin() + rc,
                   subIdBuffer_.begin());      
@@ -167,14 +168,13 @@ public:
         if(rc <= 0) return rc;
         if(items_[0].revents && ZMQ_POLLIN) return Recv();
         return 0;        
-    } 
-private:    
+    }    
     void Clear() {
         Disconnect();
         if(context_ != 0) 
             if(zmq_ctx_destroy(context_) != 0)
                 throw std::runtime_error(
-                    FormatErr("context destruction failed"));    
+                    FormatErr("context destruction failed"));                
     }
 private:
     TextHandlerT txtHandler_;

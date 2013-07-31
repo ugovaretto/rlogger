@@ -8,8 +8,33 @@
 #include <cerrno>
 #include <cstring>
 #include <algorithm>
+#include <signal.h>
+
+//------------------------------------------------------------------------------
 
 namespace rlog {
+extern "C" void RloggerSignalHandler(int sig_value);
+class Interrupt {
+    static int interrupted_;
+friend void RloggerSignalHandler(int sig_value);    
+public:
+    static bool interrupted() { return interrupted_ != 0; }
+};
+
+inline bool Interrupted() { return Interrupt::interrupted(); }
+
+inline void RloggerCatchSignals() {
+  signal(SIGABRT, &RloggerSignalHandler);
+  signal(SIGTERM, &RloggerSignalHandler);
+  signal(SIGINT, &RloggerSignalHandler);
+  // alternate implementation:
+  // struct sigaction action;
+  // action.sa_handler = s_signal_handler;
+  // action.sa_flags = 0;
+  // sigemptyset (&action.sa_mask);
+  // sigaction (SIGINT, &action, NULL);
+  // sigaction (SIGTERM, &action, NULL);
+}
 
 //------------------------------------------------------------------------------
 typedef char TypeID;
@@ -32,20 +57,24 @@ std::string FormatErr(const T& msg) {
 //other namespaces
 template < typename T > bool EmptySubId(T);
 
-template <> bool EmptySubId<int>(int i) { return i < 0; }
-template <> bool EmptySubId<unsigned int>(unsigned int i) { return i == 0; }  
-template <> bool EmptySubId<char*>(char* id) { return strlen(id) == 0; }
-template <> bool EmptySubId<const char*>(const char* id) { 
+template <> inline bool EmptySubId<int>(int i) { return i < 0; }
+template <> inline bool EmptySubId<unsigned int>(unsigned int i) { 
+  return i == 0;
+}  
+template <> inline bool EmptySubId<char*>(char* id) { return strlen(id) == 0; }
+template <> inline bool EmptySubId<const char*>(const char* id) { 
   return strlen(id) == 0;
 }
 
 //------------------------------------------------------------------------------
 template < typename T > size_t SizeOfSubId(T) { return sizeof(T); }
-template <> size_t SizeOfSubId< char* >(char* str) { return strlen(str); }
-template <> size_t SizeOfSubId< const char* >(const char* str) { 
+template <> inline size_t SizeOfSubId< char* >(char* str) { 
+  return strlen(str);
+}
+template <> inline size_t SizeOfSubId< const char* >(const char* str) { 
     return strlen(str);
 }
-size_t SizeOfSubId(const std::string& str) { 
+inline size_t SizeOfSubId(const std::string& str) { 
     return str.size();
 }
 //------------------------------------------------------------------------------
@@ -55,13 +84,14 @@ template < typename T > void* AddressOfSubId(T* pd) { return pd; }
 template < typename T > const void* AddressOfSubId(const T* pd) { return pd; }
 //DANGEROUS but required so pass data to send/recv which require
 //non-const pointers
-template <> void* AddressOfSubId(std::string& s) { 
+template <> inline void* AddressOfSubId(std::string& s) { 
     return const_cast< char* >(s.c_str());
 }
-template <> const void* AddressOfSubId(const std::string& s) {
+template <> inline const void* AddressOfSubId(const std::string& s) {
     return s.c_str();
 }
 //------------------------------------------------------------------------------
+inline
 BufferPosition AddStringRecord(const char* msg,
                                BufferPosition pos,
                                Buffer& buffer,
@@ -128,6 +158,7 @@ struct ToString < const char* > {
       return reinterpret_cast< const char* >(sid);
     }
 };
+
 
 
 } //namespace rlog

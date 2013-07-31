@@ -18,6 +18,7 @@ typedef int PID;
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
     using namespace rlog;
+    RloggerCatchSignals();
     if(argc < 2) {
         std::cout << "usage: " 
                   << argv[0] 
@@ -32,7 +33,9 @@ int main(int argc, char** argv) {
     const PID pid = argc > 2 ? atoi(argv[2]) : -1;
     LogClient< PID, TextHandler< ToString< int > > > 
         lc(std::cout, pid, brokerURI);
-    while(1) lc.Recv();
+    while(!Interrupted()) lc.Recv();
+    std::cout << "\rInterrupted" << std::endl;
+    lc.Clear();
     return 0;
 }
 

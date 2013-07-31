@@ -101,8 +101,7 @@ public:
         if(forceFlush
            || (outBufferPos_ - outBuffer_.begin() >= sendTrigger_))
             Flush();
-    }
-private:    
+    } 
     void Clear() {
         Disconnect();
         ResetBuffers();    
@@ -111,6 +110,7 @@ private:
                 throw std::runtime_error(
                     FormatErr("context destruction failed"));
     }
+private:    
     void ResetBuffers() {
         oss_.str("");
         outBufferPos_ = outBuffer_.begin();
