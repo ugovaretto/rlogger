@@ -89,8 +89,7 @@ public:
         if(zmq_send(socket_, &outBuffer_[0],
                     outBufferPos_ - outBuffer_.begin(), 0) < 0 )
             throw std::runtime_error(FormatErr("send failure"));
-        outBufferPos_ = outBuffer_.begin();
-        oss_.str("");
+       ResetBuffers();
     }
     void CheckAndFlush(bool forceFlush) {
         //this should never happen because bounds are checked at each
@@ -131,6 +130,7 @@ private:
     friend LogSource& operator<<(LogSource& ls, const T& data) {
         ls.oss_ << data;
         ls.Log(ls.oss_.str().c_str());
+        ls.oss_.str("");
         return ls;
     }
 

@@ -9,6 +9,10 @@
 #include <cstring>
 #include <algorithm>
 #include <signal.h>
+#include <cassert>
+
+
+#include <iostream>
 
 //------------------------------------------------------------------------------
 
@@ -159,6 +163,20 @@ struct ToString < const char* > {
     }
 };
 
-
+//------------------------------------------------------------------------------
+inline std::string ExtractStrings(const char* b, SizeType sz) {
+    const char* e = b + sz;
+    std::string ret;
+    while(b < e) {
+        assert(*b == TEXT_ID);
+        ++b; 
+        const SizeType s = *reinterpret_cast< const SizeType* >(b);
+        assert(s > 0);
+        b += sizeof(SizeType);
+        ret += std::string(b, s);
+        b += s;
+    }
+    return ret;
+}
 
 } //namespace rlog

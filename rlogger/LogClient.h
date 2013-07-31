@@ -16,14 +16,14 @@ struct DummyHandler {
     DummyHandler() {}
     template < typename T > DummyHandler(T&) {}
     template < typename T > DummyHandler(const T&) {}
-    void operator()(void*, SizeType, char*, SizeType) {}
+    void operator()(void*, SizeType, const char*, SizeType) {}
 };
 
 //------------------------------------------------------------------------------
 template < typename SubIdParserT >
 struct TextHandler {
     TextHandler(std::ostream& os) : os_(&os) {}
-    void operator()(void* sid, SizeType sz, char* text, SizeType textSize) {
+    void operator()(void* sid, SizeType sz, const char* text, SizeType textSize) {
         *os_ << parser(sid, sz) << ": " << text << std::endl;
     }
     std::ostream* os_;
@@ -147,11 +147,12 @@ public:
         rc = zmq_recv(socket_, &inBuffer_[0], inBuffer_.size(), 0);
         if(rc <= 0) return rc;
         switch(DataType(inBuffer_[0])) {
-        case TEXT_ID: inBuffer_[rc] = '\0';
-                      txtHandler_(&subIdBuffer_[0], subIdBuffer_.size(),
-                        &inBuffer_[sizeof(char) + sizeof(SizeType)],
-                        *reinterpret_cast< SizeType* >(
-                            &inBuffer_[sizeof(char)]));
+        case TEXT_ID: {
+                        const std::string txt = 
+                            ExtractStrings(&inBuffer_[0], rc);
+                        txtHandler_(&subIdBuffer_[0], subIdBuffer_.size(),
+                                    txt.c_str(), txt.size());
+                    }
                       break;
         case BLOB_ID: binHandler_(&subIdBuffer_[0], subIdBuffer_.size(),
                                   &inBuffer_[sizeof(char) + sizeof(SizeType)],

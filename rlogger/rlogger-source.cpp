@@ -32,10 +32,12 @@ int main(int argc, char** argv) {
     }
     RloggerCatchSignals();
     try {
-        LogSource< int > ls(argv[1], int(get_proc_id()));
+        const int sendBufferLimit = 20;
+        LogSource< int > ls(argv[1], int(get_proc_id()), sendBufferLimit);
         std::cout << "PID: " << int(get_proc_id()) << std::endl;
         while(!Interrupted()) {
-    	   ls.Log("hello");
+    	   ls << "hello from " <<  int(get_proc_id());
+          //ls.Flush();
     	   sleep(1);
         }
         std::cout << "\rInterrupted" << std::endl;
