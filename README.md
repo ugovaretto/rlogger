@@ -3,12 +3,12 @@ rlogger - Remote logger
 
 Log reguests from processes to remote clients through a zeromq-based broker.
 
-When used in conjunction with MPI: Brokers running on non-compute node receive
-messges from compute-node MPI processes and dispatch messages to remote
+When used in conjunction with MPI: Brokers running on non-compute nodes receive
+messages from compute-node MPI processes and dispatch such messages to remote
 clients.
 
 Broker, client and logger services can be started in any order; if clients
-want subscribe to messages from specific process ids logger processes need
+want to subscribe to messages from specific process ids then logger processes need
 to be started first to read the process id to be passed to clients.
 
 For the first version of the logger the following constraint is obeyed:
