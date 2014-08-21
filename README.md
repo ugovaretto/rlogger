@@ -11,7 +11,7 @@ Broker, client and logger services can be started in any order; if clients
 want to subscribe to messages from specific process ids then logger processes need
 to be started first to read the process id to be passed to clients.
 
-For the first version of the logger the following constraint is obeyed:
+Constraint:
 
 * one subscription per remote process only; clients can receive data from
   multiple processes by using one socket per process; or they can receive
@@ -28,7 +28,7 @@ Flow:
 * client: subscribe to broker 
 
 The same architecture can be reversed to allow for communication from clients
-to servers to e.g. steer computation or select which information to log:
+to servers to e.g. steer computation or select which data to log:
 
 * compute process (usually same as log source): subscribe to control broker
 * control broker: subscribe to control client; publish to compute process
