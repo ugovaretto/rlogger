@@ -27,7 +27,7 @@ Flow:
 * broker: subscribe to log sources; publish to clients
 * client: subscribe to broker 
 
-The same architecture can be reversed to allow for communication from clients
+The flow can be reversed to allow for communication from clients
 to servers to e.g. steer computation or select which data to log:
 
 * compute process (usually same as log source): subscribe to control broker
